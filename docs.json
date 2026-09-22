@@ -1,0 +1,114 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "BoothMaven",
+  "colors": {
+    "primary": "#011E2C",
+    "light": "#8CD926",
+    "dark": "#011E2C"
+  },
+
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Manual",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["manual/manager/introduction"]
+          },
+          {
+            "group": "Part A: Account Admin (Web App)",
+            "pages": [
+              "manual/manager/account-admin/01-onboarding",
+              "manual/manager/account-admin/02-events",
+              "manual/manager/account-admin/03-team",
+              "manual/manager/account-admin/04-contacts",
+              "manual/manager/account-admin/05-cards-assets",
+              "manual/manager/account-admin/06-microsites",
+              "manual/manager/account-admin/07-stories",
+              "manual/manager/account-admin/08-meetings",
+              "manual/manager/account-admin/09-task-lists",
+              "manual/manager/account-admin/10-settings",
+              "manual/manager/account-admin/11-email-verification-audit",
+              "manual/manager/booth-manager/12-role-access",
+              "manual/manager/booth-manager/13-event-contacts",
+              "manual/manager/booth-manager/14-meetings",
+              "manual/manager/booth-manager/15-sharing-assets"
+            ]
+          },
+          {
+            "group": "Part B: Staff",
+            "pages": [
+              "manual/staff/introduction",
+              "manual/staff/chapters/01-getting-started",
+              "manual/staff/chapters/02-capturing-leads",
+              "manual/staff/chapters/03-managing-contacts",
+              "manual/staff/chapters/04-meetings",
+              "manual/staff/chapters/05-sharing-content"
+            ]
+          },
+          {
+            "group": "Part C: Intelligence & Analytics",
+            "pages": [
+              "manual/manager/analytics/01-invitation-and-share-tracking",
+              "manual/manager/analytics/02-conversations-and-floor-notes",
+              "manual/manager/analytics/03-digital-asset-lead-capture-responses",
+              "manual/manager/analytics/04-engagement-analytics-by-contact-and-content"
+            ]
+          },
+          {
+            "group": "Part D: Integrations",
+            "pages": [
+              "manual/zapier/zapier-integration-api",
+              "manual/hubspot/hubspot-api",
+              "manual/salesforce/salesforce-api"
+            ]
+          },
+          {
+            "group": "Help & Support",
+            "pages": ["manual/staff/chapters/06-troubleshooting"]
+          },
+          {
+            "group": "Appendix",
+            "pages": ["manual/manager/appendix/troubleshooting-and-glossary"]
+          }
+        ]
+      },
+      {
+        "tab": "API",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["api/public-api"]
+          }
+        ]
+      }
+    ]
+  },
+
+  "logo": {
+    "light": "/manual/manager/images/logo_white.png",
+    "dark": "/manual/manager/images/logo_dark.png"
+  },
+
+  "navbar": {
+    "links": [
+      {
+        "label": "Sign In",
+        "href": "https://boothmaven.com"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Get Support",
+      "href": "https://boothmaven.com"
+    }
+  },
+
+  "footer": {
+    "socials": {
+      "website": "https://boothmaven.com"
+    }
+  }
+}

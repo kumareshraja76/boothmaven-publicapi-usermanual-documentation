@@ -1,0 +1,82 @@
+---
+title: "Contact & Lead Management (Web)"
+sidebarTitle: "4. Contacts List"
+description: "Review captured leads, filter by score tiers, and run bulk operations."
+icon: "address-book"
+---
+
+## Chapter 4: Contact & Lead Management (Web)
+
+The Contacts section is your central hub for reviewing all leads captured across every event.
+
+### 4.1 The Contacts List
+
+Navigate to **Contacts** from the main menu. The table shows all contacts with name, company, phone, email, website, lead score, event, and assigned list. Filter by **Hot / Warm / Cool** tabs, or click **Filter** for advanced options.
+
+* **Lead Score** — 0–100, automatically calculated from qualification answers.
+* **Hot / Warm / Cool** — The three quality tiers (customisable labels).
+
+![Contacts list — all captured leads with scores, event tags, and row actions](/manual/manager/images/img_09.png)
+
+*▲ Contacts list — all captured leads with scores, event tags, and row actions*
+
+### 4.2 Adding a Contact Manually (Web)
+
+Click **Create Contact** in the top right. Fill in name, company, email, phone, and any other details. Qualification questions can be answered in the form or filled in later.
+
+![Add New Contact form — manually enter lead details from the web portal](/manual/manager/images/img_10.png)
+
+*▲ Add New Contact form — manually enter lead details from the web portal*
+
+### 4.3 Bulk Actions on Contacts
+
+Select contacts using the checkboxes on the left. The bulk action panel appears. Available bulk actions:
+
+* **Export** — Download selected contacts as CSV or Excel.
+* **Add to List** — Assign contacts to a list or create a new one.
+* **Add Tag** — Apply a shared label to multiple contacts.
+* **Delete** — Permanently remove selected contacts.
+* **Send Email** — Compose and send an email to all selected contacts.
+* **Share Digital Card** — Send your digital card to all selected contacts.
+* **Share Content** — Send a digital asset to all selected contacts.
+* **Export to CRM** — Push selected contacts to HubSpot or Salesforce.
+
+![Bulk action modal — select contacts and choose from 8 available bulk operations](/manual/manager/images/img_11.png)
+
+*▲ Bulk action modal — select contacts and choose from 8 available bulk operations*
+
+### 4.4 Lead Enrichment & Review
+
+Lead Enrichment automates the process of completing and updating contact profiles. Instead of relying solely on minimal badge scan details (often just a name and basic email), BoothMaven enriches records with deep firmographic and professional intelligence — including verified corporate titles, seniority levels, official company domains, LinkedIn profiles, employee headcounts, and industry classifications.
+
+#### How Enrichment Works
+
+1. **Triggering from Contacts List** — Check one or more contacts in the Contacts table, click **Bulk Actions**, and choose **Enrich**. You can also trigger enrichment for an individual contact by clicking the **Enrich** button on their contact profile card.
+2. **Credit Consumption & Quota Tracking** — Enrichment draws from your plan's monthly credit quota (max_credits_for_contact_enrichment). The table header displays a real-time badge (e.g., *"120 / 500 credits left"*). If your monthly limit is reached, an alert prompts you to upgrade or wait until the next billing cycle.
+3. **The Enrichment Review Dashboard** — Navigate to Contacts → Enrichment Review (or /leads/contacts/enrich/list). The review table organizes all pending and completed enrichment requests. Filter tabs let you view:
+    
+
+* **All** — Complete history of enrichment requests.
+* **Under Review** — Contacts with newly retrieved enrichment data waiting for your review.
+* **Needs Attention (Low Match)** — Records where automated matching found borderline confidence scores, requiring manual verification.
+* **High Match** — Records with high-confidence corporate matches ready for immediate application.
+4. **Side-by-Side Review Modal** — Click **Review** on any contact row to open the comparison modal. The interface displays your original captured data alongside the newly discovered enriched data field-by-field (Title, Company, Website, Phone, LinkedIn, Location, Industry). Check or uncheck individual attributes, click **Apply Selected**, or click **Apply All Enriched Fields**.
+
+  
+    
+
+📸 Lead Enrichment Review & Modal
+
+    
+
+Insert screenshot of the Enrichment Review table and side-by-side comparison modal showing current vs enriched values.
+
+  
+
+Run Lead Enrichment before syncing to HubSpot or Salesforce so your CRM receives complete, enriched account records without manual data research.
+
+<Tip>
+Use Export to CRM after the show to instantly sync qualified leads into your sales pipeline without manual data entry.
+</Tip>
+
+---

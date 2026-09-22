@@ -1,0 +1,804 @@
+---
+title: "BoothMaven Public API"
+sidebarTitle: "Public API"
+description: "Explore the BoothMaven Public API for securely creating and managing resources through authenticated API requests."
+icon: "code"
+---
+
+# BoothMaven Public API Documentation
+
+This document describes the public batch processing endpoints exposed by [routes/publicapi.php](file:///var/www/boothmaven/api-boothmaven/routes/publicapi.php).
+
+---
+
+## 1. Overview & Base URLs
+
+All public API routes are prefixed under `/publicapi`:
+
+| Environment    | Base URL                               |
+| :------------- | :------------------------------------- |
+| **Production** | `https://api.boothmaven.com/publicapi` |
+
+### Supported Endpoints
+
+| Method | Endpoint       | Description                                                                                | Content-Type          |
+| :----- | :------------- | :----------------------------------------------------------------------------------------- | :-------------------- |
+| `POST` | `/create`      | Batch upload & creation of resources (Cards, Hubs, Guides, Microsites (Interactive Pages)) | `multipart/form-data` |
+| `GET`  | `/status/{id}` | Check batch execution status and retrieve item results                                     | `application/json`    |
+
+---
+
+## 2. Authentication & Headers
+
+All public API endpoints require API key authentication via the `X-PUBLIC-KEY` HTTP header:
+
+```http
+X-PUBLIC-KEY: your_public_access_key_here
+Accept: application/json
+```
+
+- **`X-PUBLIC-KEY`** _(Header, Required)_: The user's public access API key. This is handled by the `publicapi` middleware group ([CheckPublicUser](file:///var/www/boothmaven/api-boothmaven/app/Http/Middleware/CheckPublicUser.php)), which validates the key and automatically attaches the authenticated user to the request.
+- **No `uid` in payload**: Because authentication is handled securely at the middleware layer via `X-PUBLIC-KEY`, passing `uid` in the JSON metadata payload is **not required**.
+
+If the key is missing or invalid, the API returns:
+
+```json
+{
+  "message": "Public access key missing"
+}
+```
+
+_(HTTP `401 Unauthorized`)_
+
+---
+
+## 3. Batch Resource Processor Endpoints
+
+Managed by [BatchProcessorController](file:///var/www/boothmaven/api-boothmaven/app/Http/Controllers/Api/Public/BatchProcessorController.php) and dispatched via [ResourceDispatcher](file:///var/www/boothmaven/api-boothmaven/app/Processors/ResourceDispatcher.php).
+
+### 3.1 `POST /create` — Upload & Create Batch Resources
+
+Uploads and processes batches of cards, feedback hubs, guide books, and microsites (interactive pages), alongside binary file attachments (profile photos, thumbnails, banners, brochures, audio, video).
+
+#### Request Details
+
+- **Method**: `POST`
+- **URL**: `/publicapi/create`
+- **Headers**:
+  - `X-PUBLIC-KEY: <your_public_access_key>`
+  - `Accept: application/json`
+- **Content-Type**: `multipart/form-data`
+
+#### Multipart Form Fields
+
+| Field Name          | Type              | Required | Description                                                                                                            |
+| :------------------ | :---------------- | :------- | :--------------------------------------------------------------------------------------------------------------------- |
+| `metadata`          | `string` (JSON)   | **Yes**  | A valid JSON string containing `resource_type` and the `batch` array of objects.                                       |
+| `<file_field_name>` | `file` / `file[]` | Optional | Binary files matching the aliases defined in `file_references` (e.g., `file_field_1`, `file_field_2`, `data_sheet_3`). |
+
+#### Top-Level `metadata` JSON Structure
+
+```json
+{
+  "resource_type": "digitalcards",
+  "batch": [
+    {
+      /* Resource item payload */
+    }
+  ]
+}
+```
+
+- `resource_type` (`string`, required): One of:
+  - `digitalcards` — Digital business and showcase cards
+  - `microsite` — Microsite (interactivepage): Content hubs with multi-asset sections and VR tours
+- `batch` (`array`, required): List of resource configurations to process.
+
+#### Response (`202 Accepted`)
+
+```json
+{
+  "batch_id": 105,
+  "message": "Batch accepted for processing.",
+  "data": {
+    "status": "completed",
+    "items": {
+      "210": {
+        "batch_id": 105,
+        "batch_item_id": 210,
+        "error": null,
+        "end_url": "https://api.boothmaven.com/card/abc123xyz",
+        "id": 412
+      }
+    }
+  }
+}
+```
+
+---
+
+### 3.2 `GET /status/{id}` — Query Batch Status
+
+Retrieves the processing status, execution logs, and output records for a specific batch.
+
+#### Request Details
+
+- **Method**: `GET`
+- **URL**: `/publicapi/status/{id}`
+- **Headers**:
+  - `X-PUBLIC-KEY: <your_public_access_key>`
+  - `Accept: application/json`
+- **Path Parameters**:
+  - `id` (`integer`, required): The batch ID returned by `POST /batches`.
+
+#### Response (`200 OK`)
+
+```json
+{
+  "id": 105,
+  "user_id": 3690,
+  "resource_type": "digitalcards",
+  "status": "completed",
+  "file_map": [
+    {
+      "contact_profile": "/var/www/storage/app/tmp/file_field_1_64f1a2b3c4d5e.png",
+      "thumbnail_image": "/var/www/storage/app/tmp/file_field_2_64f1a2b3c4d5f.jpg"
+    }
+  ],
+  "errors": null,
+  "created_at": "2026-09-17T06:00:00.000000Z",
+  "updated_at": "2026-09-17T06:00:04.000000Z",
+  "items": [
+    {
+      "id": 210,
+      "batch_request_id": 105,
+      "payload": {
+        "card_name": "New Individual Card",
+        "card_type": "dc_individual"
+      },
+      "status": "processed",
+      "error": null,
+      "response": {
+        "main": {
+          "status": "success",
+          "data": {
+            "id": 412,
+            "unique_url": "card/abc123xyz"
+          }
+        }
+      },
+      "created_at": "2026-09-17T06:00:00.000000Z",
+      "updated_at": "2026-09-17T06:00:04.000000Z"
+    }
+  ]
+}
+```
+
+---
+
+## 4. Resource Types & Payload Schemas
+
+### 4.1 Resource: `digitalcards`
+
+Processed by [CardProcessor](file:///var/www/boothmaven/api-boothmaven/app/Processors/CardProcessor.php) and [CardService](file:///var/www/boothmaven/api-boothmaven/app/Services/CardService.php).
+
+#### Common Card Fields
+
+| Field              | Type       | Required | Description                                                                                                                                      |
+| :----------------- | :--------- | :------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `card_name`        | `string`   | **Yes**  | Internal card identifier / title (max 50 chars).                                                                                                 |
+| `title`            | `string`   | Optional | Display headline.                                                                                                                                |
+| `card_type`        | `string`   | **Yes**  | One of the 8 card types listed below.                                                                                                            |
+| `theme_code`       | `string`   | **Yes**  | Design layout code (e.g. `dc_individual_card_view_1`).                                                                                           |
+| `published_status` | `string`   | Optional | `"Published"` or `"Draft"` (default: `"Published"`).                                                                                             |
+| `visibility`       | `string`   | Optional | `"Public"` or `"Private"` (default: `"Public"`).                                                                                                 |
+| `cta_links`        | `array`    | Optional | Array of `{ "buttonLabel": "...", "link": "https://..." }`.                                                                                      |
+| `branding_colors`  | `object`   | Optional | `{ "primary_color": "#hex", "secondary_color": "#hex" }`.                                                                                        |
+| `contact_details`  | `object`   | Optional | `{ "contact_name": "...", "contact_email": "...", "contact_phone": "..." }`.                                                                     |
+| `control_options`  | `object`   | Optional | Boolean flags: `save_contact`, `share`, `share_contact_qr`, `drop_message`, `leads_capture_form`, `social_share`, `save_event`, `save_event_qr`. |
+| `social_links`     | `object`   | Optional | Platform handles/URLs (`facebook`, `tiktok`, `linkedin`, `twitter`, `instagram`).                                                                |
+| `tags`             | `string[]` | Optional | Categorization tags.                                                                                                                             |
+| `file_references`  | `object`   | Optional | Maps logical file slots to multipart form field names.                                                                                           |
+
+---
+
+#### 4.1.1 Card Type: `dc_individual` (Individual Profile Card)
+
+Requires `card_data` personal details and `contact_profile` image.
+
+```json
+{
+  "card_name": "New Individual Card",
+  "card_type": "dc_individual",
+  "theme_code": "dc_individual_card_view_1",
+  "published_status": "Published",
+  "visibility": "public",
+  "cta_links": [
+    {
+      "buttonLabel": "Portfolio",
+      "link": "https://example.com"
+    }
+  ],
+  "branding_colors": {
+    "primary_color": "#800020",
+    "secondary_color": "#5a9550"
+  },
+  "card_data": {
+    "profile_name": "John Smith",
+    "profile_location": "San Francisco, CA",
+    "profile_headings": "Business Solutions",
+    "profile_bio": "Professional services provider"
+  },
+  "contact_details": {
+    "contact_name": "John Smith",
+    "contact_email": "john@example.com",
+    "contact_phone": "+13333333786"
+  },
+  "file_references": {
+    "contact_profile": "file_field_1",
+    "thumbnail_image": "file_field_2",
+    "sponsor_logo": "file_field_1"
+  },
+  "control_options": {
+    "save_contact": "true",
+    "share": "true",
+    "share_contact_qr": "true",
+    "drop_message": "true",
+    "leads_capture_form": "true",
+    "social_share": "true"
+  },
+  "social_links": {
+    "facebook": "fb user",
+    "tiktok": "tiktok user"
+  },
+  "tags": ["business", "partner"]
+}
+```
+
+---
+
+#### 4.1.2 Card Type: `dc_business` (Digital Business Card)
+
+```json
+{
+  "card_name": "Digital Business Card",
+  "title": "Rockwell Advisory",
+  "card_type": "dc_business",
+  "theme_code": "dc_business_card_view_1",
+  "published_status": "Published",
+  "visibility": "public",
+  "cta_links": [
+    {
+      "buttonLabel": "Visit Website",
+      "link": "https://www.example.com"
+    },
+    {
+      "buttonLabel": "Book Appointment",
+      "link": "https://calendly.com/meeting"
+    }
+  ],
+  "branding_colors": {
+    "primary_color": "#004080",
+    "secondary_color": "#00b894"
+  },
+  "contact_details": {
+    "contact_name": "Johnathan Reed",
+    "contact_email": "john.reed@example.com",
+    "contact_phone": "+1 (415) 555-0199"
+  },
+  "file_references": {
+    "contact_profile": "file_field_1",
+    "media_url": "file_field_3",
+    "sponcor_logo": "file_field_1"
+  },
+  "control_options": {
+    "save_contact": "true",
+    "share": "true",
+    "save_contact_qr": "true",
+    "drop_message": "true",
+    "leads_capture_form": "true",
+    "social_share": "true"
+  },
+  "social_links": {
+    "linkedin": "https://www.linkedin.com/company/example",
+    "twitter": "https://twitter.com/example"
+  },
+  "tags": ["business", "consulting", "technology"]
+}
+```
+
+---
+
+#### 4.1.3 Card Type: `dc_product` (Product Showcase Card)
+
+Supports `specifications`, `price_tag`, `currency`, `short_description`, `description`, and multiple `images`.
+
+```json
+{
+  "card_name": "Digital Product Card",
+  "title": "Smart Home Hub X100",
+  "card_type": "dc_product",
+  "theme_code": "dc_product_cardv_iew_1",
+  "published_status": "Published",
+  "visibility": "Public",
+  "cta_links": [
+    {
+      "buttonLabel": "Buy Now",
+      "link": "https://shop.example.com/smart-hub-x100"
+    }
+  ],
+  "branding_colors": {
+    "primary_color": "#1d3557",
+    "secondary_color": "#f4a261"
+  },
+  "contact_details": {
+    "contact_name": "Ella Gomez",
+    "contact_email": "support@smarthubdevices.com",
+    "contact_phone": "+1 (737) 555-0042"
+  },
+  "file_references": {
+    "contact_profile": "file_field_1",
+    "images": ["file_field_4", "file_field_5", "file_field_6"],
+    "sponcor_logo": "file_field_1"
+  },
+  "control_options": {
+    "save_contact": "true",
+    "share": "true",
+    "save_contact_qr": "true",
+    "drop_message": "true",
+    "leads_capture_form": false,
+    "social_share": "true"
+  },
+  "short_description": "A powerful smart hub for home automation.",
+  "description": "The Smart Home Hub X100 lets you control all your smart devices from one place.",
+  "currency": "USD",
+  "price_tag": "9000",
+  "specifications": [
+    {
+      "label": "Connectivity",
+      "value": "Wi-Fi 6, Bluetooth 5.2, Zigbee"
+    },
+    {
+      "label": "Power",
+      "value": "USB-C (5V/2A)"
+    }
+  ],
+  "tags": ["electronics", "smart-home", "iot"]
+}
+```
+
+---
+
+#### 4.1.4 Card Type: `dc_event` (Event Announcement Card)
+
+Requires `card_data` (`venue_name`, `venue_address`, `event_from_date_time`, `event_to_date_time`) and `media_url` image.
+
+```json
+{
+  "card_name": "Event Launch",
+  "title": "Event Launch",
+  "card_type": "dc_event",
+  "theme_code": "dc_event_card_view_1",
+  "published_status": "Published",
+  "visibility": "Public",
+  "cta_links": [
+    {
+      "buttonLabel": "Register Now",
+      "link": "https://example.com/register"
+    }
+  ],
+  "branding_colors": {
+    "primary_color": "#FF5733",
+    "secondary_color": "#33A1FF"
+  },
+  "contact_details": {
+    "contact_name": "Jane Doe",
+    "contact_email": "jane@example.com",
+    "contact_phone": "+15556667777"
+  },
+  "card_data": {
+    "venue_name": "Convention Center Hall A",
+    "venue_address": "100 Market St, San Francisco, CA",
+    "event_from_date_time": "Thu Aug 07 2026 10:00:00 GMT+0000",
+    "event_to_date_time": "Thu Aug 28 2026 18:00:00 GMT+0000"
+  },
+  "description": "Annual innovation conference and networking event.",
+  "file_references": {
+    "contact_profile": "file_field_1",
+    "media_url": "file_field_2",
+    "sponcor_logo": "file_field_3"
+  },
+  "control_options": {
+    "share": "true",
+    "save_contact": "true",
+    "save_contact_qr": "true",
+    "save_event": "true",
+    "save_event_qr": "true",
+    "drop_message": "true",
+    "leads_capture_form": "true",
+    "social_share": "true"
+  },
+  "social_links": {
+    "linkedin": "https://linkedin.com/in/eventpage",
+    "twitter": "https://twitter.com/eventpage"
+  },
+  "tags": ["tech", "networking"]
+}
+```
+
+---
+
+#### 4.1.5 Card Type: `dc_document` (Brochure / Flyer Card)
+
+Accepts document files (PDF, PPTX, DOCX, XLSX) via `media_url`.
+
+```json
+{
+  "card_name": "Rockwell Flyer Introduction",
+  "title": "Rockwell Flyer Introduction",
+  "card_type": "dc_document",
+  "theme_code": "dc_document_card_view_1",
+  "published_status": "Published",
+  "visibility": "public",
+  "cta_links": [
+    {
+      "buttonLabel": "Download PDF",
+      "link": "https://example.com/brochure.pdf"
+    }
+  ],
+  "branding_colors": {
+    "primary_color": "#003366",
+    "secondary_color": "#99CCFF"
+  },
+  "contact_details": {
+    "contact_name": "Michael Johnson",
+    "contact_email": "michael@example.com",
+    "contact_phone": "+14445556666"
+  },
+  "description": "Overview brochure covering enterprise software and integration options.",
+  "file_references": {
+    "contact_profile": "file_field_1",
+    "media_url": "file_field_8",
+    "sponcor_logo": "file_field_3"
+  },
+  "control_options": {
+    "save_contact": "true",
+    "share": "true",
+    "save_contact_qr": "true",
+    "drop_message": "true",
+    "leads_capture_form": "true",
+    "social_share": "true"
+  },
+  "tags": ["brochure", "products"]
+}
+```
+
+---
+
+#### 4.1.6 Card Type: `dc_video` (Video Spotlight Card)
+
+Accepts video files (MP4, AVI, MOV, WMV) via `media_url`.
+
+```json
+{
+  "card_name": "Intro Video Card",
+  "title": "Intro Video Card",
+  "card_type": "dc_video",
+  "theme_code": "dc_video_card_view_1",
+  "published_status": "Published",
+  "visibility": "public",
+  "cta_links": [
+    {
+      "buttonLabel": "Watch More",
+      "link": "https://example.com/videos"
+    }
+  ],
+  "branding_colors": {
+    "primary_color": "#1A237E",
+    "secondary_color": "#64B5F6"
+  },
+  "contact_details": {
+    "contact_name": "Emily Carter",
+    "contact_email": "emily@example.com",
+    "contact_phone": "+447911223344"
+  },
+  "description": "Key company achievements and vision introduction video.",
+  "file_references": {
+    "contact_profile": "file_field_1",
+    "media_url": "file_field_10",
+    "sponcor_logo": "file_field_3"
+  },
+  "control_options": {
+    "save_contact": "true",
+    "share": "true",
+    "save_contact_qr": "true",
+    "drop_message": "true",
+    "leads_capture_form": false,
+    "social_share": "true"
+  },
+  "tags": ["intro", "company video"]
+}
+```
+
+---
+
+#### 4.1.7 Card Type: `dc_property` (Real Estate Listing Card)
+
+Supports `location`, `price_tag`, `currency`, `amenities` list, and `images` gallery.
+
+```json
+{
+  "card_name": "Luxury Villa for Sale",
+  "title": "Luxury Villa for Sale",
+  "card_type": "dc_property",
+  "theme_code": "dc_property_card_iew_1",
+  "published_status": "Published",
+  "visibility": "public",
+  "cta_links": [
+    {
+      "buttonLabel": "View Listing",
+      "link": "https://example.com/property/villa123"
+    },
+    {
+      "buttonLabel": "Schedule Visit",
+      "link": "https://example.com/visit"
+    }
+  ],
+  "branding_colors": {
+    "primary_color": "#3A86FF",
+    "secondary_color": "#FFBE0B"
+  },
+  "contact_details": {
+    "contact_name": "Alice Morgan",
+    "contact_email": "alice@eliteestates.com",
+    "contact_phone": "+1 (555) 123-9876"
+  },
+  "currency": "USD",
+  "price_tag": "2500000",
+  "location": "Beverly Hills, CA",
+  "description": "Luxurious contemporary villa featuring open concept architecture, panoramic views, and premium finishes.",
+  "file_references": {
+    "contact_profile": "file_field_1",
+    "images": ["file_field_4", "file_field_5", "file_field_6"],
+    "sponcor_logo": "file_field_3"
+  },
+  "control_options": {
+    "save_contact": "true",
+    "share": "true",
+    "save_contact_qr": "true",
+    "drop_message": false,
+    "leads_capture_form": "true",
+    "social_share": "true"
+  },
+  "amenities": [
+    {
+      "label": "Bedrooms",
+      "value": "5"
+    },
+    {
+      "label": "Bathrooms",
+      "value": "4"
+    },
+    {
+      "label": "Area",
+      "value": "4500 sqft"
+    },
+    {
+      "label": "Garage",
+      "value": "3 Car Garage"
+    }
+  ],
+  "tags": ["villa", "real estate", "luxury"]
+}
+```
+
+---
+
+#### 4.1.8 Card Type: `dc_audio` (Audio / Podcast Card)
+
+Accepts audio files (MP3, WAV, AAC, FLAC, OGG) via `media_url` and thumbnail image.
+
+```json
+{
+  "card_name": "Podcast Launch Card",
+  "title": "Podcast Launch Card",
+  "card_type": "dc_audio",
+  "theme_code": "dc_audio_card_view_1",
+  "published_status": "Published",
+  "visibility": "public",
+  "cta_links": [
+    {
+      "buttonLabel": "Listen Now",
+      "link": "https://example.com/podcast/episode1"
+    }
+  ],
+  "branding_colors": {
+    "primary_color": "#1DB954",
+    "secondary_color": "#191414"
+  },
+  "contact_details": {
+    "contact_name": "Jake Turner",
+    "contact_email": "jake@techtalk.com",
+    "contact_phone": "+1 (555) 456-7890"
+  },
+  "file_references": {
+    "contact_profile": "file_field_1",
+    "thumbnail_image": "file_field_2",
+    "sponcor_logo": "file_field_3",
+    "media_url": "file_field_9"
+  },
+  "control_options": {
+    "save_contact": "true",
+    "share": "true",
+    "save_contact_qr": false,
+    "drop_message": "true",
+    "leads_capture_form": false,
+    "social_share": "true"
+  },
+  "tags": ["podcast", "audio", "launch"]
+}
+```
+
+---
+
+### 4.4 Resource: `interactive_pages` — Microsite (Interactive Page)
+
+Processed by [InteractivePageProcessor](file:///var/www/boothmaven/api-boothmaven/app/Processors/InteractivePageProcessor.php) and [InteractivePageUtilityProcessor](file:///var/www/boothmaven/api-boothmaven/app/Processors/InteractivePageUtilityProcessor.php).
+
+Creates a microsite (interactive page) containing digital content hubs with multiple sections, digital assets (files, images, links), and embedded virtual 360-degree spaces.
+
+```json
+{
+  "resource_type": "interactive_pages",
+  "batch": [
+    {
+      "interactive_data": {
+        "heading": "Cozy Coffee Spot",
+        "title": "Greenwood Café",
+        "descryption": "A warm and friendly café offering freshly brewed coffee, homemade pastries, and a relaxing atmosphere."
+      },
+      "theme_code": "ip_content_hub_grid_view_1",
+      "visibility": "Public",
+      "published_status": "Published",
+      "collection_password": "",
+      "page_type_code": "ip_content_hub",
+      "control_options": {
+        "contactus_form_enabled": true,
+        "leads_capture_form": false,
+        "pdf_enabled": true,
+        "sharing_enabled": true,
+        "social_sharing_button_enabled": false
+      },
+      "branding_colors": {
+        "branding_accent_colour_1": "#8A2BE2",
+        "branding_accent_colour_2": "#FFFF00"
+      },
+      "tags": ["store", "digital"],
+      "file_references": {
+        "logo": "file_field_1",
+        "banner_image": "file_field_1",
+        "thumbnail_image": "file_field_1",
+        "section_icon": "file_field_8",
+        "asset_file_4": "file_field_8"
+      },
+      "section": [
+        {
+          "section_name": "section 1",
+          "section_icon": "section_icon",
+          "order_by": 1,
+          "assets": [
+            {
+              "title": "Resource Brochure",
+              "asset_type": "at_file",
+              "description": "Product and overview brochure",
+              "asset_file_url": "asset_file_4",
+              "tags": ["asset_tag_2", "301"]
+            }
+          ]
+        },
+        {
+          "section_name": "section 2",
+          "section_icon": "section_icon",
+          "order_by": 2,
+          "assets": [
+            {
+              "title": "Floorplan Document",
+              "asset_type": "at_file",
+              "description": "Detailed space layout",
+              "asset_file_url": "asset_file_4",
+              "tags": ["blueprints"]
+            }
+          ],
+          "vr": [
+            {
+              "tour_data": {
+                "welcome_content_type": "video",
+                "welcome_video": "Cozy Coffee Spot",
+                "tour_name": "Grand Mall",
+                "welcome_text": "A warm and friendly café offering freshly brewed coffee, homemade pastries, and a relaxing atmosphere."
+              },
+              "visibility": "Public",
+              "published_status": "Published",
+              "tour_password": "",
+              "control_options": {
+                "contactus_form_enabled": true,
+                "sharing_enabled": true,
+                "leads_capture_form": false,
+                "social_sharing_button_enabled": false
+              },
+              "tags": ["store", "digital"],
+              "file_references": {
+                "panorama_source": "file_field_2",
+                "asset_file_4": "file_field_5"
+              },
+              "Hot_spots": [
+                {
+                  "positions": {
+                    "latitude": 0.089171276703417375,
+                    "longitude": 0.1577696260387753
+                  },
+                  "assets": {
+                    "title": "Image of Mall",
+                    "asset_type": "at_file",
+                    "description": "Store entrance viewpoint",
+                    "asset_file_url": "asset_file_4",
+                    "tags": ["entrance"]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## 5. Complete cURL Examples
+
+### 5.1 Upload Batch with Files (`POST /create`)
+
+```bash
+curl -X POST "https://api.boothmaven.com/publicapi/create" \
+  -H "X-PUBLIC-KEY: pk_live_9a8b7c6d5e4f3a2b1c" \
+  -F 'metadata={
+    "resource_type": "digitalcards",
+    "batch": [
+      {
+        "card_name": "John Doe Card",
+        "card_type": "dc_individual",
+        "theme_code": "dc_individual_card_view_1",
+        "published_status": "Published",
+        "visibility": "public",
+        "card_data": {
+          "profile_name": "John Doe",
+          "profile_location": "New York, NY",
+          "profile_headings": "Chief Architect",
+          "profile_bio": "Enterprise software consultant"
+        },
+        "contact_details": {
+          "contact_name": "John Doe",
+          "contact_email": "john.doe@example.com",
+          "contact_phone": "+12125550199"
+        },
+        "file_references": {
+          "contact_profile": "file_field_1",
+          "thumbnail_image": "file_field_2"
+        }
+      }
+    ]
+  }' \
+  -F "file_field_1=@/path/to/profile.png" \
+  -F "file_field_2=@/path/to/thumbnail.jpg"
+```
+
+### 5.2 Check Batch Status (`GET /status/{id}`)
+
+```bash
+curl -X GET "https://api.boothmaven.com/publicapi/status/105" \
+  -H "X-PUBLIC-KEY: pk_live_9a8b7c6d5e4f3a2b1c" \
+  -H "Accept: application/json"
+```

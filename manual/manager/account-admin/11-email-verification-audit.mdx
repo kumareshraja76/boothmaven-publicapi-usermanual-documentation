@@ -1,0 +1,36 @@
+---
+title: "Email Verification & Deliverability Audit"
+sidebarTitle: "11. Email Verification"
+description: "Pre-flight deliverability validation, SMTP reputation protection, bounce prevention, and bulk verification checks."
+icon: "envelope-circle-check"
+---
+
+### 11 Email Verification Audit
+
+Field-captured email addresses are frequently mistyped or outdated. The Email Verification module validates email deliverability directly within BoothMaven before you launch follow-up outreach, safeguarding your outbound SMTP server reputation and preventing bounce penalties.
+
+#### Verification Statuses & Indicators
+
+Access the verification log from the Contacts header by clicking the **Email Verification Card** or navigating to /leads/contacts/verify-email/list. Each verified email is assigned a deliverability status:
+
+* **Verified (Deliverable)** — The email address was successfully handshake-validated with the destination mail server and is safe to send.
+* **Not Verified / Failed** — The mailbox does not exist, domain mx records are invalid, syntax is malformed, or the server returned an explicit bounce.
+* **Unknown (Catch-All / Greylisted)** — The receiving domain accepts all inbound emails or temporarily rate-limited the verification probe.
+
+  
+    
+
+📸 Email Verification Audit Table
+
+    
+
+Insert screenshot of the Email Verification list showing email addresses, verification status badges, confidence scores, and timestamps.
+
+  
+
+#### Running Email Verification in Bulk
+
+1. In the **Contacts** list, select the contacts you wish to verify.
+2. Open the **Bulk Actions** dropdown and choose **Verify Email**.
+3. BoothMaven dispatches verification checks in the background. Results populate the **Email Verification Audit** table with detailed failure reasons (e.g. *"Mailbox not found"*, *"Syntax error"*, *"Disposable domain"*) and confidence scores.
+4. Filter contacts in the main list by verification status to exclude non-deliverable emails from mass outreach campaigns.
