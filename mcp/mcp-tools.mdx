@@ -1,0 +1,111 @@
+---
+title: MCP Tools
+description: 51 tools exposed to connected AI assistants via the BoothMaven MCP server, grouped by what they touch.
+---
+
+# BoothMaven Tool Registry
+
+Everything an assistant can read, write, or delete on your behalf — grouped by what it touches, not by how it's named.
+
+**51 tools total**
+
+## Events
+
+| Tool                             | Description                                                                   | Read | Write | Delete | Plan      |
+| -------------------------------- | ----------------------------------------------------------------------------- | :--: | :---: | :----: | --------- |
+| `boothmaven-create-event`        | Create a new event, optionally setting schedule, location, and other details. |      |   ✓   |        | All Plans |
+| `boothmaven-update-event`        | Update an existing event. Only provided fields are changed.                   |      |   ✓   |        | All Plans |
+| `boothmaven-list-events`         | List events, with optional title, status, or event ID filters.                |  ✓   |       |        | All Plans |
+| `boothmaven-list-event-contacts` | List contacts checked in or associated with a given event.                    |      |   ✓   |        | All Plans |
+
+## Digital cards & design
+
+| Tool                             | Description                                                    | Read | Write | Delete | Plan      |
+| -------------------------------- | -------------------------------------------------------------- | :--: | :---: | :----: | --------- |
+| `boothmaven-create-digital-card` | Create a digital business card for the authenticated user.     |  ✓   |       |        | All Plans |
+| `boothmaven-list-digital-cards`  | List or search digital cards by ID, name, or type.             |  ✓   |       |        | All Plans |
+| `boothmaven-share-digital-card`  | Share a digital card with one or more contacts via trigger.    |  ✓   |       |        | All Plans |
+| `boothmaven-list-themes`         | List design themes for digital cards, micro-pages, and more.   |  ✓   |       |        | All Plans |
+| `boothmaven-list-page-subtypes`  | List available page subtypes for micro-pages or digital cards. |  ✓   |       |        | All Plans |
+
+## Micro-pages
+
+| Tool                                       | Description                                                     | Read | Write | Delete | Plan                 |
+| ------------------------------------------ | --------------------------------------------------------------- | :--: | :---: | :----: | -------------------- |
+| `boothmaven-list-micro-pages`              | List or search micro-pages; can fetch full page details.        |  ✓   |       |        | Essential & Business |
+| `boothmaven-list-micro-page-asset-mapping` | List assets available for mapping into a micro-page section.    |  ✓   |       |        | Essential & Business |
+| `boothmaven-save-micro-page`               | Create or update a micro-page.                                  |      |   ✓   |        | Essential & Business |
+| `boothmaven-update-micro-page-assets`      | Set the full list of assets mapped to a page section.           |      |   ✓   |        | Essential & Business |
+| `boothmaven-manage-micro-page-section`     | Sort, edit, add, or delete micro-page sections and asset order. |  ✓   |   ✓   |   ✓    | Essential & Business |
+| `boothmaven-record-micro-page-download`    | Record a micro-page downloadable-content download.              |  ✓   |       |        | Essential & Business |
+| `boothmaven-share-micro-page`              | Share a micro-page with one or more contacts via trigger.       |  ✓   |       |        | Essential & Business |
+| `boothmaven-delete-micro-page`             | Permanently delete a page, its sections, and asset mappings.    |  ✓   |       |   ✓    | Essential & Business |
+
+## Assets
+
+| Tool                             | Description                                                     | Read | Write | Delete | Plan                 |
+| -------------------------------- | --------------------------------------------------------------- | :--: | :---: | :----: | -------------------- |
+| `boothmaven-list-assets`         | List or search uploaded images, videos, documents, products.    |  ✓   |       |        | Essential & Business |
+| `boothmaven-list-assets-by-mime` | List assets filtered to types compatible with digital signage.  |  ✓   |       |        | Essential & Business |
+| `boothmaven-save-asset`          | Create or update an image, video, document, audio, or 3D asset. |  ✓   |   ✓   |        | Essential & Business |
+| `boothmaven-delete-asset`        | Permanently delete an asset, its file, thumbnail, and mappings. |  ✓   |       |        | Essential & Business |
+
+## Contacts
+
+| Tool                        | Description                                                      | Read | Write | Delete | Plan                 |
+| --------------------------- | ---------------------------------------------------------------- | :--: | :---: | :----: | -------------------- |
+| `boothmaven-list-contacts`  | List or search contacts, including captured answers and scoring. |  ✓   |       |        | All Plans            |
+| `boothmaven-get-contact`    | Get full details for a single contact, including notes.          |  ✓   |       |        | All Plans            |
+| `boothmaven-update-contact` | Update fields on an existing contact.                            |  ✓   |   ✓   |        | All Plans            |
+| `boothmaven-create-contact` | Create a new contact.                                            |  ✓   |   ✓   |        | All Plans            |
+| `boothmaven-enrich-contact` | Enrich a contact with additional profile data.                   |  ✓   |   ✓   |        | Essential & Business |
+| `boothmaven-verify-email`   | Verify whether an email address is valid and deliverable.        |  ✓   |       |        | Business             |
+
+## Staff & tasks
+
+| Tool                       | Description                                                      | Read | Write | Delete | Plan      |
+| -------------------------- | ---------------------------------------------------------------- | :--: | :---: | :----: | --------- |
+| `boothmaven-list-staff`    | List staff or fetch a specific staff member.                     |  ✓   |       |        | All Plans |
+| `boothmaven-create-staff`  | Create a new staff member.                                       |  ✓   |   ✓   |        | All Plans |
+| `boothmaven-create-task`   | Create a task, optionally assigning a staff member and/or event. |      |   ✓   |        | All Plans |
+| `boothmaven-list-tasks`    | List or search tasks by ID, tag, or status.                      |  ✓   |       |        | All Plans |
+| `boothmaven-update-task`   | Update fields on an existing task.                               |  ✓   |   ✓   |        | All Plans |
+| `boothmaven-complete-task` | Mark a task as completed.                                        |  ✓   |   ✓   |        | All Plans |
+| `boothmaven-delete-task`   | Permanently delete a task.                                       |  ✓   |       |   ✓    | All Plans |
+
+## Meetings
+
+| Tool                               | Description                                                     | Read | Write | Delete | Plan                 |
+| ---------------------------------- | --------------------------------------------------------------- | :--: | :---: | :----: | -------------------- |
+| `boothmaven-list-meetings`         | List or search meetings by event, status, date range, or name.  |  ✓   |       |        | Essential & Business |
+| `boothmaven-create-meeting`        | Schedule a meeting with one or more contacts, tied to an event. |      |   ✓   |        | Essential & Business |
+| `boothmaven-update-meeting-status` | Update meeting status and optionally attach notes or a reason.  |  ✓   |   ✓   |        | Essential & Business |
+
+## Communications
+
+| Tool                                       | Description                                                        | Read | Write | Delete | Plan      |
+| ------------------------------------------ | ------------------------------------------------------------------ | :--: | :---: | :----: | --------- |
+| `boothmaven-send-email`                    | Send an email using a configured communication trigger.            |  ✓   |   ✓   |        | All Plans |
+| `boothmaven-list-available-triggers`       | List available communication triggers, including overrides.        |  ✓   |       |        | All Plans |
+| `boothmaven-save-trigger`                  | Create or update a communication trigger and linked template.      |      |   ✓   |        | All Plans |
+| `boothmaven-delete-trigger`                | Delete a user trigger override, reverting to the platform default. |      |   ✓   |        | All Plans |
+| `boothmaven-save-communication-template`   | Create or update a communication template subject and body.        |      |   ✓   |        | All Plans |
+| `boothmaven-delete-communication-template` | Permanently delete a custom communication template.                |  ✓   |       |   ✓    | All Plans |
+
+## Activity & notes
+
+| Tool                            | Description                                                        | Read | Write | Delete | Plan      |
+| ------------------------------- | ------------------------------------------------------------------ | :--: | :---: | :----: | --------- |
+| `boothmaven-search-activities`  | Search logs by event, contact, staff, type, asset, meeting, date.  |  ✓   |       |        | All Plans |
+| `boothmaven-get-activity-stats` | Aggregated activity totals, unique contacts, counts by type/staff. |  ✓   |       |        | All Plans |
+| `boothmaven-search-notes`       | Search text and voice notes, transcripts, and engagement tags.     |  ✓   |       |        | All Plans |
+| `boothmaven-get-note-stats`     | Aggregated note counts — total, voice, text, tagged, untagged.     |  ✓   |       |        | All Plans |
+
+## Moments
+
+| Tool                        | Description                | Read | Write | Delete | Plan      |
+| --------------------------- | -------------------------- | :--: | :---: | :----: | --------- |
+| `boothmaven-create-moment`  | Create a new moment.       |  ✓   |   ✓   |        | All Plans |
+| `boothmaven-update-moment`  | Update an existing moment. |  ✓   |   ✓   |        | All Plans |
+| `boothmaven-delete-moment`  | Delete an existing moment. |      |       |   ✓    | All Plans |
+| `boothmaven-search-moments` | Search and read moments.   |  ✓   |       |        | All Plans |

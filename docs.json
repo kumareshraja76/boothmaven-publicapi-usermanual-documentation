@@ -88,6 +88,15 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "MCP",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["mcp/mcp-tools"]
+          }
+        ]
       }
     ]
   },
