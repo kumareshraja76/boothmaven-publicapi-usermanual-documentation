@@ -9,7 +9,7 @@ icon: "bolt"
 
 > **Specification**: OpenAPI 3.0.3 / Zapier App v1.0.0  
 > **Compliance**: [Zapier Platform Publishing Requirements - Section 5.2 (App APIs are documented)](https://docs.zapier.com/platform/publish/integration-publishing-requirements#5-2-app-apis-are-documented)  
-> **Contact / Developer Support**: [hello@boothmaven.com](mailto:hello@boothmaven.com) &bull; [BoothMaven.com](https://boothmaven.com)
+> **Contact / Developer Support**: [support@boothmaven.com](mailto:support@boothmaven.com) &bull; [BoothMaven.com](https://boothmaven.com)
 
 ---
 
@@ -21,9 +21,10 @@ BoothMaven captures leads, digital business cards, and event engagement data in 
 
 ### Environment Base URLs
 
-| Environment    | Base URL                     | Description         |
-| :------------- | :--------------------------- | :------------------ |
-| **Production** | `https://api.boothmaven.com` | Live production API |
+| Environment         | Base URL                           | Description           |
+| :------------------ | :--------------------------------- | :-------------------- |
+| **Production**      | `https://api.boothmaven.com`       | Live production API   |
+| **Staging / Alpha** | `https://alpha-api.boothmaven.com` | Staging / testing API |
 
 ### General Conventions
 
@@ -46,8 +47,15 @@ BoothMaven captures leads, digital business cards, and event engagement data in 
    - [Outbound Webhook Delivery (Payload)](#outbound-webhook-delivery-payload)
 4. [Action: Create Contact](#4-action-create-contact)
    - [POST /api/zapier/contacts](#post-apizapiercontacts)
-5. [Error Handling & HTTP Status Codes](#5-error-handling--http-status-codes)
-6. [OpenAPI 3.0.3 Specification (JSON)](#6-openapi-303-specification-json)
+5. [Trigger: New Meeting (REST Hooks)](#5-trigger-new-meeting-rest-hooks)
+   - [POST /api/zapier/hooks/meetings/subscribe](#51-subscribe-to-meeting-webhook)
+   - [DELETE /api/zapier/hooks/meetings/subscribe](#52-unsubscribe-from-meeting-webhook)
+   - [GET /api/zapier/meetings (Perform List / Sample Data)](#53-perform-list-sample-meetings)
+   - [Outbound Webhook Delivery (Payload)](#54-webhook-event-delivery-payload)
+6. [Action: Create Meeting](#6-action-create-meeting)
+   - [POST /api/zapier/meetings](#post-apizapiermeetings)
+7. [Error Handling & HTTP Status Codes](#7-error-handling--http-status-codes)
+8. [OpenAPI 3.0.3 Specification (JSON)](#8-openapi-303-specification-json)
 
 ---
 
@@ -142,7 +150,7 @@ grant_type=authorization_code&client_id=YOUR_CLIENT_ID&client_secret=YOUR_CLIENT
 
 **Get Authenticated User Profile (Test Connection)**
 
-Used by Zapier when a user connects their account to verify the OAuth token is valid and to construct dynamic connection labels such as `BoothMaven (Jane Doe)`.
+Used by Zapier when a user connects their account to verify the OAuth token is valid and to construct dynamic connection labels such as `{{email}}` or `{{name}} ({{email}})` (e.g. `jane@example.com` or `Jane Doe (jane@example.com)`). Note: Zapier publishing rules require omitting the app name from the connection label.
 
 #### Security
 
@@ -395,7 +403,243 @@ Creates a new contact record associated with the authenticated BoothMaven user.
 
 ---
 
-## 5. Error Handling & HTTP Status Codes
+## 5. Trigger: New Meeting (REST Hooks)
+
+The **New Meeting** trigger uses Zapier REST Hooks. When a user turns on a Zap in Zapier, Zapier registers a subscription URL with BoothMaven. When a meeting is scheduled in BoothMaven (via web, mobile, public booking link, or API), BoothMaven delivers the meeting payload to all subscribed URLs in real-time.
+
+### 5.1 Subscribe to Meeting Webhook
+
+#### Request
+
+- **Method**: `POST`
+- **URL**: `/api/zapier/hooks/meetings/subscribe`
+- **Headers**:
+  - `Authorization: Bearer <access_token>`
+  - `Content-Type: application/json`
+  - `Accept: application/json`
+- **Body**:
+
+```json
+{
+  "targetUrl": "https://hooks.zapier.com/hooks/catch/123456/abcdef/"
+}
+```
+
+#### Response (`201 Created`)
+
+```json
+{
+  "id": 19,
+  "targetUrl": "https://hooks.zapier.com/hooks/catch/123456/abcdef/",
+  "target_url": "https://hooks.zapier.com/hooks/catch/123456/abcdef/"
+}
+```
+
+---
+
+### 5.2 Unsubscribe from Meeting Webhook
+
+Called by Zapier when a Zap is turned off or deleted.
+
+#### Request
+
+- **Method**: `DELETE`
+- **URL**: `/api/zapier/hooks/meetings/subscribe`
+- **Headers**:
+  - `Authorization: Bearer <access_token>`
+  - `Content-Type: application/json`
+  - `Accept: application/json`
+- **Body**:
+
+```json
+{
+  "id": 19,
+  "targetUrl": "https://hooks.zapier.com/hooks/catch/123456/abcdef/"
+}
+```
+
+#### Response (`200 OK`)
+
+```json
+{
+  "success": true
+}
+```
+
+---
+
+### 5.3 Perform List (Sample Meetings)
+
+Called by Zapier in the Zap Editor to fetch real sample records for field mapping before live webhooks are sent. Returns up to 20 of the authenticated user's most recent meetings.
+
+#### Request
+
+- **Method**: `GET`
+- **URL**: `/api/zapier/meetings`
+- **Headers**:
+  - `Authorization: Bearer <access_token>`
+  - `Accept: application/json`
+
+#### Response (`200 OK`)
+
+```json
+[
+  {
+    "id": 5001,
+    "meeting_name": "Quarterly Product Demo",
+    "meeting_status": "scheduled",
+    "meeting_format": "virtual",
+    "priority": "high",
+    "meeting_date": "2026-10-15",
+    "meeting_time": "14:30:00",
+    "meeting_duration": 45,
+    "timezone": "America/New_York",
+    "meeting_location": "https://meet.google.com/abc-def-ghi",
+    "meeting_agenda": "Review enterprise features and answer questions",
+    "meeting_url": "https://view.boothmaven.com/cards/meeting/abcdef123456",
+    "booking_source": "zapier",
+    "event_id": 25,
+    "event_name": "BoothMaven Expo 2026",
+    "primary_contact_id": 1001,
+    "primary_contact_name": "Ada Lovelace",
+    "primary_contact_email": "ada@example.com",
+    "contacts": [
+      {
+        "id": 1001,
+        "name": "Ada Lovelace",
+        "email": "ada@example.com",
+        "phone": "+1234567890",
+        "company": "Analytical Engines Ltd"
+      }
+    ],
+    "created_at": "2026-09-23T10:00:00Z"
+  }
+]
+```
+
+---
+
+### 5.4 Webhook Event Delivery (Payload)
+
+When a meeting is scheduled in BoothMaven, BoothMaven sends an HTTP `POST` to Zapier's subscribed `targetUrl`:
+
+#### Payload Structure
+
+```json
+{
+  "id": 5001,
+  "meeting_name": "Quarterly Product Demo",
+  "meeting_status": "scheduled",
+  "meeting_format": "virtual",
+  "priority": "high",
+  "meeting_date": "2026-10-15",
+  "meeting_time": "14:30:00",
+  "meeting_duration": 45,
+  "timezone": "America/New_York",
+  "meeting_location": "https://meet.google.com/abc-def-ghi",
+  "meeting_agenda": "Review enterprise features and answer questions",
+  "meeting_url": "https://view.boothmaven.com/cards/meeting/abcdef123456",
+  "booking_source": "zapier",
+  "event_id": 25,
+  "event_name": "BoothMaven Expo 2026",
+  "primary_contact_id": 1001,
+  "primary_contact_name": "Ada Lovelace",
+  "primary_contact_email": "ada@example.com",
+  "contacts": [
+    {
+      "id": 1001,
+      "name": "Ada Lovelace",
+      "email": "ada@example.com",
+      "phone": "+1234567890",
+      "company": "Analytical Engines Ltd"
+    }
+  ],
+  "created_at": "2026-09-23T10:00:00Z"
+}
+```
+
+---
+
+## 6. Action: Create Meeting
+
+Allows external applications (Google Calendar, Calendly, Typeform, Webforms, CRMs) to schedule meetings directly in BoothMaven.
+
+### `POST /api/zapier/meetings`
+
+#### Security
+
+- `Authorization: Bearer <access_token>`
+
+#### Request Body Schema (`application/json`)
+
+| Field              | Type                   | Required | Description                                        |
+| :----------------- | :--------------------- | :------- | :------------------------------------------------- |
+| `meeting_name`     | `string (max 191)`     | **Yes**  | Title or name of the meeting                       |
+| `meeting_date`     | `string (date)`        | **Yes**  | Meeting date (`YYYY-MM-DD`)                        |
+| `meeting_time`     | `string`               | **Yes**  | Meeting time (`HH:MM` or `HH:MM:SS`)               |
+| `meeting_duration` | `integer`              | No       | Duration in minutes (default `30`)                 |
+| `meeting_format`   | `string`               | No       | Format (`virtual`, `hybrid`, `inPerson`)           |
+| `priority`         | `string`               | No       | Priority level (`high`, `medium`, `low`)           |
+| `meeting_location` | `string`               | No       | Physical address or video conference URL           |
+| `meeting_agenda`   | `string`               | No       | Meeting description or notes                       |
+| `timezone`         | `string`               | No       | Timezone identifier (e.g. `America/New_York`)      |
+| `event_id`         | `integer`              | No       | Linked BoothMaven event ID                         |
+| `contact_id`       | `integer \| integer[]` | No       | Existing contact ID(s) to invite                   |
+| `contact_email`    | `string (email)`       | No       | Email of existing contact to link if ID is unknown |
+
+#### Sample Request Body
+
+```json
+{
+  "meeting_name": "Enterprise Demo Call",
+  "meeting_date": "2026-11-01",
+  "meeting_time": "14:00:00",
+  "meeting_duration": 45,
+  "meeting_format": "virtual",
+  "meeting_location": "https://meet.google.com/xyz",
+  "meeting_agenda": "Review enterprise features and answer questions",
+  "contact_email": "lead@example.com"
+}
+```
+
+#### Response (`201 Created`)
+
+```json
+{
+  "id": 5002,
+  "meeting_name": "Enterprise Demo Call",
+  "meeting_status": "scheduled",
+  "meeting_format": "virtual",
+  "priority": null,
+  "meeting_date": "2026-11-01",
+  "meeting_time": "14:00:00",
+  "meeting_duration": 45,
+  "timezone": "UTC",
+  "meeting_location": "https://meet.google.com/xyz",
+  "meeting_agenda": "Review enterprise features and answer questions",
+  "meeting_url": "https://view.boothmaven.com/cards/meeting/xyz987",
+  "booking_source": "zapier",
+  "event_id": null,
+  "event_name": null,
+  "primary_contact_id": 1001,
+  "primary_contact_name": "Lead Person",
+  "primary_contact_email": "lead@example.com",
+  "contacts": [
+    {
+      "id": 1001,
+      "name": "Lead Person",
+      "email": "lead@example.com",
+      "phone": "+1234567890",
+      "company": "Acme Inc"
+    }
+  ],
+  "created_at": "2026-09-23T10:15:00Z"
+}
+```
+
+---
+
+## 7. Error Handling & HTTP Status Codes
 
 BoothMaven API uses standard HTTP response status codes. Errors include a JSON body detailing the failure cause.
 
@@ -429,7 +673,7 @@ BoothMaven API uses standard HTTP response status codes. Errors include a JSON b
 
 ---
 
-## 6. OpenAPI 3.0.3 Specification (JSON)
+## 8. OpenAPI 3.0.3 Specification (JSON)
 
 Below is the complete, machine-readable OpenAPI 3.0.3 specification in JSON:
 
@@ -439,17 +683,21 @@ Below is the complete, machine-readable OpenAPI 3.0.3 specification in JSON:
   "info": {
     "title": "BoothMaven Zapier Integration API",
     "version": "1.0.0",
-    "description": "Comprehensive API documentation for BoothMaven's Zapier integration. BoothMaven is an event engagement, lead capture, and digital business card platform. This API enables seamless synchronization of contacts captured during live events and meetings with external CRMs, spreadsheets, and marketing automation tools via Zapier.\n\n### Authentication\nAuthentication is powered by **OAuth 2.0 Authorization Code Grant** (Laravel Passport). All API requests must include a valid Bearer token in the `Authorization` header.\n\n### Base URLs\n* **Production**: `https://api.boothmaven.com`\n*### Support & Inquiries\nFor integration support or developer inquiries, contact [hello@boothmaven.com](mailto:hello@boothmaven.com).",
+    "description": "Comprehensive API documentation for BoothMaven's Zapier integration. BoothMaven is an event engagement, lead capture, and digital business card platform. This API enables seamless synchronization of contacts captured during live events and meetings with external CRMs, spreadsheets, and marketing automation tools via Zapier.\n\n### Authentication\nAuthentication is powered by **OAuth 2.0 Authorization Code Grant** (Laravel Passport). All API requests must include a valid Bearer token in the `Authorization` header.\n\n### Base URLs\n* **Production**: `https://api.boothmaven.com`\n* **Staging / Testing**: `https://alpha-api.boothmaven.com`\n\n### Support & Inquiries\nFor integration support or developer inquiries, contact [support@boothmaven.com](mailto:support@boothmaven.com).",
     "contact": {
       "name": "BoothMaven Developer Support",
       "url": "https://boothmaven.com",
-      "email": "hello@boothmaven.com"
+      "email": "support@boothmaven.com"
     }
   },
   "servers": [
     {
       "url": "https://api.boothmaven.com",
       "description": "Production Server"
+    },
+    {
+      "url": "https://alpha-api.boothmaven.com",
+      "description": "Staging / Alpha Server"
     }
   ],
   "tags": [
@@ -468,6 +716,14 @@ Below is the complete, machine-readable OpenAPI 3.0.3 specification in JSON:
     {
       "name": "Action: Create Contact",
       "description": "Inbound endpoint to create new contacts in BoothMaven from third-party apps."
+    },
+    {
+      "name": "Trigger: New Meeting (REST Hooks)",
+      "description": "Webhook subscriptions and sample meeting polling for real-time meeting sync."
+    },
+    {
+      "name": "Action: Create Meeting",
+      "description": "Inbound endpoint to schedule new meetings in BoothMaven from external calendars and scheduling tools."
     }
   ],
   "paths": {
@@ -601,7 +857,7 @@ Below is the complete, machine-readable OpenAPI 3.0.3 specification in JSON:
       "get": {
         "tags": ["Account"],
         "summary": "Get Authenticated User Profile (Connection Test)",
-        "description": "Returns the authenticated user's profile information. Used by Zapier during initial account connection testing and to display dynamic connection labels (e.g. `BoothMaven (Jane Doe)`).",
+        "description": "Returns the authenticated user's profile information. Used by Zapier during initial account connection testing and to display dynamic connection labels (e.g. `jane@example.com` or `Jane Doe (jane@example.com)` without app name per Zapier publishing conventions).",
         "security": [{ "bearerAuth": [] }, { "oauth2": ["contacts:read"] }],
         "responses": {
           "200": {
@@ -830,6 +1086,185 @@ Below is the complete, machine-readable OpenAPI 3.0.3 specification in JSON:
           }
         }
       }
+    },
+    "/api/zapier/hooks/meetings/subscribe": {
+      "post": {
+        "tags": ["Trigger: New Meeting (REST Hooks)"],
+        "summary": "Subscribe to New Meeting Webhook",
+        "description": "Registers a new REST Hook subscription URL for the authenticated user. Whenever a meeting is scheduled in BoothMaven, BoothMaven sends an HTTP POST with the meeting payload to this URL.",
+        "security": [{ "bearerAuth": [] }, { "oauth2": ["contacts:read"] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscribeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Webhook subscription created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscribeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid Bearer token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error - Missing targetUrl.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Trigger: New Meeting (REST Hooks)"],
+        "summary": "Unsubscribe from New Meeting Webhook",
+        "description": "Removes a meeting webhook subscription for the authenticated user.",
+        "security": [{ "bearerAuth": [] }, { "oauth2": ["contacts:read"] }],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnsubscribeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook subscription removed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnsubscribeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid Bearer token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error - Neither `id` nor `targetUrl` provided.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/zapier/meetings": {
+      "get": {
+        "tags": ["Trigger: New Meeting (REST Hooks)"],
+        "summary": "List Recent Meetings (Perform List / Sample Data)",
+        "description": "Retrieves up to 20 of the most recently scheduled meetings for the authenticated user. Used by the Zap Editor to display sample meeting data for field mapping.",
+        "security": [{ "bearerAuth": [] }, { "oauth2": ["contacts:read"] }],
+        "responses": {
+          "200": {
+            "description": "Array of recent meeting records.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Meeting"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid Bearer token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Action: Create Meeting"],
+        "summary": "Create Meeting (Inbound Action)",
+        "description": "Schedules a new meeting in BoothMaven under the authenticated user's account. Used by Zapier to schedule meetings from external tools (Google Calendar, Calendly, Typeform, CRM).",
+        "security": [{ "bearerAuth": [] }, { "oauth2": ["contacts:read"] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetingCreateInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Meeting created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meeting"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid Bearer token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error - Missing required fields or invalid data format.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -995,6 +1430,247 @@ Below is the complete, machine-readable OpenAPI 3.0.3 specification in JSON:
           }
         },
         "required": ["first_name"]
+      },
+      "Meeting": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 5002,
+            "description": "Unique identifier of the meeting"
+          },
+          "meeting_name": {
+            "type": "string",
+            "example": "Enterprise Demo Call",
+            "description": "Title or subject of the meeting"
+          },
+          "meeting_status": {
+            "type": "string",
+            "example": "scheduled",
+            "description": "Meeting status"
+          },
+          "meeting_format": {
+            "type": "string",
+            "nullable": true,
+            "example": "virtual",
+            "description": "Format (virtual, hybrid, inPerson)"
+          },
+          "priority": {
+            "type": "string",
+            "nullable": true,
+            "example": "high",
+            "description": "Priority level"
+          },
+          "meeting_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-11-01",
+            "description": "Date of the meeting"
+          },
+          "meeting_time": {
+            "type": "string",
+            "example": "14:00:00",
+            "description": "Time of the meeting"
+          },
+          "meeting_duration": {
+            "type": "integer",
+            "nullable": true,
+            "example": 45,
+            "description": "Duration in minutes"
+          },
+          "timezone": {
+            "type": "string",
+            "example": "UTC",
+            "description": "Timezone identifier"
+          },
+          "meeting_location": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://meet.google.com/xyz",
+            "description": "Meeting location or conference link"
+          },
+          "meeting_agenda": {
+            "type": "string",
+            "nullable": true,
+            "example": "Review enterprise features and answer questions",
+            "description": "Meeting agenda or notes"
+          },
+          "meeting_url": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://view.boothmaven.com/cards/meeting/xyz987",
+            "description": "Public meeting card or booking link"
+          },
+          "booking_source": {
+            "type": "string",
+            "example": "zapier",
+            "description": "Origin of the meeting booking"
+          },
+          "event_id": {
+            "type": "integer",
+            "nullable": true,
+            "example": 25,
+            "description": "Linked BoothMaven event ID"
+          },
+          "event_name": {
+            "type": "string",
+            "nullable": true,
+            "example": "BoothMaven Expo 2026",
+            "description": "Title of the associated event"
+          },
+          "primary_contact_id": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1001,
+            "description": "Primary attendee contact ID"
+          },
+          "primary_contact_name": {
+            "type": "string",
+            "nullable": true,
+            "example": "Lead Person",
+            "description": "Primary attendee name"
+          },
+          "primary_contact_email": {
+            "type": "string",
+            "nullable": true,
+            "example": "lead@example.com",
+            "description": "Primary attendee email"
+          },
+          "contacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeetingContact"
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-09-23T10:15:00Z",
+            "description": "Creation timestamp in UTC ISO 8601 format"
+          }
+        },
+        "required": [
+          "id",
+          "meeting_name",
+          "meeting_status",
+          "meeting_date",
+          "meeting_time",
+          "created_at"
+        ]
+      },
+      "MeetingContact": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1001
+          },
+          "name": {
+            "type": "string",
+            "example": "Lead Person"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true,
+            "example": "lead@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "example": "+1234567890"
+          },
+          "company": {
+            "type": "string",
+            "nullable": true,
+            "example": "Acme Inc"
+          }
+        }
+      },
+      "MeetingCreateInput": {
+        "type": "object",
+        "properties": {
+          "meeting_name": {
+            "type": "string",
+            "maxLength": 191,
+            "example": "Enterprise Demo Call",
+            "description": "Meeting title or subject (required)"
+          },
+          "meeting_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-11-01",
+            "description": "Date of meeting in YYYY-MM-DD format (required)"
+          },
+          "meeting_time": {
+            "type": "string",
+            "maxLength": 50,
+            "example": "14:00:00",
+            "description": "Time of meeting e.g. 14:00 or 14:00:00 (required)"
+          },
+          "meeting_duration": {
+            "type": "integer",
+            "nullable": true,
+            "example": 45,
+            "description": "Meeting duration in minutes (default 30)"
+          },
+          "meeting_format": {
+            "type": "string",
+            "enum": ["virtual", "hybrid", "inPerson"],
+            "nullable": true,
+            "example": "virtual",
+            "description": "Format of meeting"
+          },
+          "priority": {
+            "type": "string",
+            "nullable": true,
+            "example": "high",
+            "description": "Priority level (high, medium, low)"
+          },
+          "meeting_location": {
+            "type": "string",
+            "maxLength": 191,
+            "nullable": true,
+            "example": "https://meet.google.com/xyz",
+            "description": "Physical location or video call link"
+          },
+          "meeting_agenda": {
+            "type": "string",
+            "maxLength": 1000,
+            "nullable": true,
+            "example": "Review enterprise features and answer questions",
+            "description": "Agenda or notes"
+          },
+          "timezone": {
+            "type": "string",
+            "maxLength": 100,
+            "nullable": true,
+            "example": "America/New_York",
+            "description": "Timezone identifier (default UTC)"
+          },
+          "event_id": {
+            "type": "integer",
+            "nullable": true,
+            "example": 25,
+            "description": "Linked BoothMaven event ID"
+          },
+          "contact_id": {
+            "oneOf": [
+              { "type": "integer" },
+              { "type": "array", "items": { "type": "integer" } }
+            ],
+            "nullable": true,
+            "example": 1001,
+            "description": "ID(s) of existing BoothMaven contact(s) to attach"
+          },
+          "contact_email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true,
+            "example": "lead@example.com",
+            "description": "Email of existing contact to link if contact_id is unknown"
+          }
+        },
+        "required": ["meeting_name", "meeting_date", "meeting_time"]
       },
       "SubscribeInput": {
         "type": "object",

@@ -60,9 +60,9 @@
           {
             "group": "Part D: Integrations",
             "pages": [
-              "manual/zapier/zapier-integration-api",
+              "manual/zapier/zapier-user-guide",
               "manual/hubspot/hubspot-api",
-              "manual/salesforce/salesforce-api"
+              "manual/salesforce/salesforce-user-guide"
             ]
           },
           {

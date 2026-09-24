@@ -10,7 +10,7 @@ icon: "cloud"
 > **Reference URL**: [https://www.boothmaven.com/integration/salesforce/](https://www.boothmaven.com/integration/salesforce/)  
 > **API Version**: Salesforce REST API v60.0 (Spring '24 / Summer '24)  
 > **Supported Plans**: **Essential ** & **Business ** _(Not available on Capture)_  
-> **Contact / Support**: [hello@boothmaven.com](mailto:hello@boothmaven.com) &bull; [BoothMaven.com](https://boothmaven.com)
+> **Contact / Support**: [BoothMaven.com](https://boothmaven.com)
 
 ---
 

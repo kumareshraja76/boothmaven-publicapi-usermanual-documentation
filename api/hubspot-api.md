@@ -9,8 +9,8 @@ icon: "link"
 
 > **Reference URL**: [https://www.boothmaven.com/integration/hubspot/](https://www.boothmaven.com/integration/hubspot/)  
 > **API Version**: HubSpot CRM API v3 / v4 Associations  
-> **Supported Plans**: **All Plans** — Capture , Essential , Business   
-> **Contact / Support**: [hello@boothmaven.com](mailto:hello@boothmaven.com) &bull; [BoothMaven.com](https://boothmaven.com)
+> **Supported Plans**: **All Plans** — Capture , Essential , Business  
+> **Contact / Support**: [BoothMaven.com](https://boothmaven.com)
 
 ---
 
