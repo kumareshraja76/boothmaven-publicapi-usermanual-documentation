@@ -80,7 +80,12 @@
         "groups": [
           {
             "group": "Getting Started",
-            "pages": ["api/public-api"]
+            "pages": [
+              "api/public-api",
+              "api/zapier-integration-api",
+              "api/hubspot-api",
+              "api/salesforce-api"
+            ]
           }
         ]
       }
